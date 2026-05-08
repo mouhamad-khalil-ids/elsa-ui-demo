@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Iilam Kanouny — Legal Review Dashboard." />
+    <title>Iilam Kanouny — Workflow Portal</title>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+
+  <body>
+    <!-- ═══════════════════ Navigation Bar ═══════════════════ -->
+    <nav class="navbar" role="navigation" aria-label="Main navigation">
+      <a href="iilam-kanouny.html" class="navbar-brand">
+        <div class="nav-logo" aria-hidden="true">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+          </svg>
+        </div>
+        <span id="nav-app-name">Workflow Portal</span>
+      </a>
+
+      <div style="display:flex; align-items:center; gap:1rem;">
+        <span style="font-size:0.8125rem; color:var(--color-text-muted);">Iilam Kanouny</span>
+        <button class="btn-logout" id="logout-btn" type="button" aria-label="Sign out">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <polyline points="16 17 21 12 16 7" />
+            <line x1="21" y1="12" x2="9" y2="12" />
+          </svg>
+          Sign Out
+        </button>
+      </div>
+    </nav>
+
+    <!-- ═══════════════════ Main Content ═══════════════════ -->
+    <main class="reviewer-page" id="dashboard-page">
+      <div class="reviewer-card">
+        <div class="reviewer-card-header">
+          <div>
+            <h2>All Transactions</h2>
+            <p>Select a transaction on the left to view its full details.</p>
+          </div>
+        </div>
+        <!-- Split workspace: list (left) | detail (right) -->
+        <div id="tx-container"></div>
+      </div>
+    </main>
+
+    <!-- Toast & Loader -->
+    <div id="toast" class="toast" role="alert" aria-live="polite"></div>
+    <div id="loader-overlay" class="loader-overlay" aria-hidden="true">
+      <div class="loader-spinner"></div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="config/env.js"></script>
+    <script src="constants.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/store.js"></script>
+    <script src="js/transactions-grid.js"></script>
+    <script src="js/iilam-kanouny.js"></script>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        document.title = `Iilam Kanouny — ${ENV.APP_NAME}`;
+        document.getElementById("nav-app-name").textContent = ENV.APP_NAME;
+        IilamKanouny.initIilamKanounyPage();
+      });
+    </script>
+  </body>
+</html>

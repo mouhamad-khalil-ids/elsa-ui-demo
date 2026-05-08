@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Sign in to your Workflow Portal account."
+    />
+    <title>Sign In — Workflow Portal</title>
+
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+
+  <body>
+    <!-- ═══════════════════ Login Page ═══════════════════ -->
+    <main class="login-page" id="login-page">
+      <div class="login-card" role="main">
+        <!-- Header -->
+        <div class="login-header">
+          <div class="login-logo" aria-hidden="true">
+            <!-- Lightning bolt icon -->
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+            </svg>
+          </div>
+          <h1>Welcome back</h1>
+          <p>Sign in to your <strong>Workflow Portal</strong> account</p>
+        </div>
+
+        <!-- Login Form -->
+        <form id="login-form" novalidate autocomplete="on">
+          <!-- Username -->
+          <div class="form-group">
+            <label for="username">Username</label>
+            <div class="input-wrapper">
+              <span class="input-icon" aria-hidden="true">
+                <!-- User icon -->
+                <svg viewBox="0 0 24 24">
+                  <circle cx="12" cy="8" r="4" />
+                  <path d="M4 20c0-4 3.582-7 8-7s8 3 8 7" />
+                </svg>
+              </span>
+              <input
+                type="text"
+                id="username"
+                name="username"
+                placeholder="Enter your username"
+                autocomplete="username"
+                required
+                autofocus
+              />
+            </div>
+          </div>
+
+          <!-- Password -->
+          <div class="form-group">
+            <label for="password">Password</label>
+            <div class="input-wrapper">
+              <span class="input-icon" aria-hidden="true">
+                <!-- Lock icon -->
+                <svg viewBox="0 0 24 24">
+                  <rect x="3" y="11" width="18" height="11" rx="2" />
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+              </span>
+              <input
+                type="password"
+                id="password"
+                name="password"
+                placeholder="Enter your password"
+                autocomplete="current-password"
+                required
+              />
+              <!-- Show / hide password toggle -->
+              <button
+                type="button"
+                class="btn-toggle-password"
+                id="toggle-password"
+                aria-label="Toggle password visibility"
+              >
+                <!-- Eye icon (shown by default) -->
+                <svg id="icon-eye" viewBox="0 0 24 24">
+                  <path d="M1 12S5 4 12 4s11 8 11 8-4 8-11 8S1 12 1 12z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+                <!-- Eye-off icon (hidden by default) -->
+                <svg
+                  id="icon-eye-off"
+                  viewBox="0 0 24 24"
+                  style="display: none"
+                >
+                  <path
+                    d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"
+                  />
+                  <path
+                    d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"
+                  />
+                  <line x1="1" y1="1" x2="23" y2="23" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Remember me + Forgot password -->
+          <div class="form-row">
+            <label class="checkbox-label" for="remember-me">
+              <input type="checkbox" id="remember-me" name="remember" />
+              Remember me
+            </label>
+            <a href="#" class="link" id="forgot-password-link"
+              >Forgot password?</a
+            >
+          </div>
+
+          <!-- Submit -->
+          <button type="submit" class="btn btn-primary" id="login-btn">
+            Sign In
+          </button>
+        </form>
+
+        <!-- Footer -->
+        <p class="login-footer">
+          Don't have an account? <a href="#" id="register-link">Create one</a>
+        </p>
+      </div>
+      <!-- /.login-card -->
+    </main>
+
+    <!-- ═══════════════════ Toast ═══════════════════ -->
+    <div id="toast" class="toast" role="alert" aria-live="polite"></div>
+
+    <!-- ═══════════════════ Loader Overlay ═══════════════════ -->
+    <div id="loader-overlay" class="loader-overlay" aria-hidden="true">
+      <div class="loader-spinner"></div>
+    </div>
+
+    <!-- ═══════════════════ Scripts ═══════════════════
+         Load order matters:
+         1. config/env.js   → defines ENV (base URL, keys)
+         2. js/api.js       → defines API (uses ENV)
+         3. js/ui.js        → defines UI helpers
+         4. js/auth.js      → defines Auth (uses ENV, API, UI)
+         5. Inline init     → wires the page
+    ════════════════════════════════════════════════ -->
+    <script src="config/env.js"></script>
+    <script src="constants.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/auth.js"></script>
+
+    <script>
+      // ── Page Initialisation ──────────────────────────────
+      document.addEventListener("DOMContentLoaded", () => {
+        // Update page title from config
+        document.title = `Sign In — ${ENV.APP_NAME}`;
+        document.querySelector(".login-header strong").textContent =
+          ENV.APP_NAME;
+
+        // Wire login form
+        Auth.initLoginPage();
+
+        // Password show/hide toggle
+        const passwordInput = document.getElementById("password");
+        const toggleBtn = document.getElementById("toggle-password");
+        const iconEye = document.getElementById("icon-eye");
+        const iconEyeOff = document.getElementById("icon-eye-off");
+
+        toggleBtn.addEventListener("click", () => {
+          const isPassword = passwordInput.type === "password";
+          passwordInput.type = isPassword ? "text" : "password";
+          iconEye.style.display = isPassword ? "none" : "";
+          iconEyeOff.style.display = isPassword ? "" : "none";
+          toggleBtn.setAttribute(
+            "aria-label",
+            isPassword ? "Hide password" : "Show password",
+          );
+        });
+
+        // Placeholder links — replace with real routing
+        document
+          .getElementById("forgot-password-link")
+          .addEventListener("click", (e) => {
+            e.preventDefault();
+            UI.showToast("Password reset is not set up yet.", "info");
+          });
+
+        document
+          .getElementById("register-link")
+          .addEventListener("click", (e) => {
+            e.preventDefault();
+            UI.showToast("Registration is not set up yet.", "info");
+          });
+      });
+    </script>
+  </body>
+</html>
