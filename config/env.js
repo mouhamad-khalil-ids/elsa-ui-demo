@@ -6,7 +6,7 @@
  */
 const ENV = Object.freeze({
   /** Base URL of your backend API (no trailing slash) */
-  BASE_URL: "http://localhost:5000/api",
+  BASE_URL: "https://elsa-workflows.ids.com.lb/api",
 
   /** Token storage key in localStorage */
   TOKEN_KEY: "auth_token",

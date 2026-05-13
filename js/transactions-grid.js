@@ -69,7 +69,13 @@ function _showDetailPanel(record, containerId, options) {
     .join("");
 
   const actions = options.actions || [];
-  const isDecided = !!record.decision;
+  let isDecided = !!record.decision;
+
+  // For Moaawen Chooba, "approved" means it arrived from Legal,
+  // so we still want to show action buttons for him.
+  if (Auth.getUsername() === Usernames.MOAAWEN_CHOOBA && record.decision === "approved") {
+    isDecided = false;
+  }
 
   const actionsHTML = actions.length
     ? `<div class="detail-actions">
@@ -132,11 +138,16 @@ function _showDetailPanel(record, containerId, options) {
       if (!btn) return;
 
       btn.addEventListener("click", async () => {
-        // Disable both buttons while in-flight
+        // Disable all action buttons while in-flight
         panel.querySelectorAll("[data-action-id]").forEach((b) => (b.disabled = true));
 
         try {
-          await API.post(action.endpoint, { transactionId: record.id });
+          // Use custom handler if provided, otherwise fall back to generic POST
+          if (typeof action.onAction === "function") {
+            await action.onAction(record);
+          } else {
+            await API.post(action.endpoint, { transactionId: record.id });
+          }
 
           // Persist decision locally
           Store.updateTransaction(record.id, { decision: action.id });
@@ -195,7 +206,12 @@ function renderTransactionsGrid(containerId, options = {}) {
   const container = document.getElementById(containerId);
   if (!container) return;
 
-  const records = Store.getTransactions();
+  let records = Store.getTransactions();
+
+  // Filter for Moaawen Chooba: only see transactions approved by Iilam Kanouny
+  if (Auth.getUsername() === Usernames.MOAAWEN_CHOOBA) {
+    records = records.filter((r) => r.decision === "approved");
+  }
 
   container.innerHTML = `
     <div class="tx-workspace">

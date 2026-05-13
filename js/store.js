@@ -46,10 +46,10 @@ function saveTransaction(role, data) {
   const records = _readAll();
 
   const record = {
-    id:          _generateId(),
+    id: _generateId(),
     submittedBy: Auth.getUsername(),
     role,
-    timestamp:   new Date().toISOString(),
+    timestamp: new Date().toISOString(),
     data,
   };
 
@@ -100,4 +100,10 @@ function clearTransactions() {
   localStorage.removeItem(ENV.TRANSACTIONS_KEY);
 }
 
-const Store = { saveTransaction, getTransactions, updateTransaction, deleteTransaction, clearTransactions };
+const Store = {
+  saveTransaction,
+  getTransactions,
+  updateTransaction,
+  deleteTransaction,
+  clearTransactions,
+};

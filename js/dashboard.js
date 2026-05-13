@@ -24,10 +24,10 @@ function validateForm(form) {
   let valid = true;
 
   const firstnameField = document.getElementById("firstname");
-  const lastnameField  = document.getElementById("lastname");
-  const ageField       = document.getElementById("age");
+  const lastnameField = document.getElementById("lastname");
+  const ageField = document.getElementById("age");
   const realEstateField = document.getElementById("real-estate-number");
-  const transactionField = document.getElementById("transaction-type");
+  const transactionField = document.getElementById("transactionType");
   const typeCheckboxes = form.querySelectorAll('input[name="type"]');
 
   // First name
@@ -85,17 +85,32 @@ async function submitDashboardForm(form) {
   const typeCheckboxes = form.querySelectorAll('input[name="type"]:checked');
 
   const payload = {
-    firstname:         document.getElementById("firstname").value.trim(),
-    lastname:          document.getElementById("lastname").value.trim(),
-    age:               parseInt(document.getElementById("age").value, 10),
-    type:              [...typeCheckboxes].map((cb) => cb.value),
-    realEstateNumber:  document.getElementById("real-estate-number").value.trim(),
-    transactionType:   document.getElementById("transaction-type").value,
+    firstname: document.getElementById("firstname").value.trim(),
+    lastname: document.getElementById("lastname").value.trim(),
+    age: parseInt(document.getElementById("age").value, 10),
+    type: [...typeCheckboxes].map((cb) => cb.value),
+    realEstateNumber: document
+      .getElementById("real-estate-number")
+      .value.trim(),
+    transactionType: document.getElementById("transactionType").value,
   };
 
+  // Submit application to the backend API
+  const applicationPayload = {
+    transactionType: "Request",
+    employeeEmail: "employee@company.com",
+    i3almKanouniEmail: "legal.advisor@company.com",
+    mo3awenCho3baEmail: "dept.assistant@company.com",
+    requiresMo5atabat: false,
+  };
+  const application = await API.post("/applications", applicationPayload);
+
   // Persist to localStorage
-  const record = Store.saveTransaction(Usernames.CITIZEN, payload);
-  return record;
+  const record = Store.saveTransaction(Usernames.CITIZEN, {
+    ...payload,
+    ...application,
+  });
+  return { record };
 }
 
 /* ─────────────────────── Page Init ─────────────────────────── */

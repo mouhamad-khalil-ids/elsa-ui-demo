@@ -6,6 +6,19 @@
  * Depends on: ENV, API, UI, Auth, Store, TransactionsGrid, constants.js
  */
 
+/**
+ * POST /applications/{id}/mo5atabat/decide
+ * @param {string} transactionId - The transaction (application) ID
+ * @param {string} decision
+ * @param {string} reason
+ */
+function _submitMokhatabatDecision(transactionId, decision, reason) {
+  return API.post(`/applications/${transactionId}/mo5atabat/decide`, {
+    decision,
+    reason,
+  });
+}
+
 /** Action button definitions for the moaawen chooba detail panel. */
 const MOAAWEN_ACTIONS = [
   {
@@ -23,11 +36,13 @@ const MOAAWEN_ACTIONS = [
     icon:     '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
   },
   {
-    id:       "mokhatabat",
-    label:    "Mokhatabat",
-    variant:  "warning",
-    endpoint: "/transactions/mokhatabat",
-    icon:     '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+    id:      "mokhatabat",
+    label:   "Mokhatabat",
+    variant: "warning",
+    icon:    '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+    onAction(record) {
+      return _submitMokhatabatDecision(record.data.id, "approved", "all is good");
+    },
   },
   {
     id:       "maneh-kanouny",
