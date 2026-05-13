@@ -117,9 +117,34 @@ function initLoginPage() {
     UI.setFormLoading(form, true);
     try {
       await login(username, password);
+
+      const ROLE_MAP = {
+        IILAM_KANOUNY: "I3lamKanouni",
+        Mo3awenCho3ba: "Mo3awenCho3ba",
+        [Usernames.IILAM_KANOUNY]: "I3lamKanouni",
+        [Usernames.MOAAWEN_CHOOBA]: "Mo3awenCho3ba",
+      };
+
+      const userType = username;
+      const apiRole = ROLE_MAP[userType] ?? userType;
+      localStorage.setItem("userRole", apiRole);
+      localStorage.setItem("userType", userType);
+
       UI.showToast("Login successful! Redirecting…", "success", 1500);
       setTimeout(() => {
-        window.location.href = getUserDashboard();
+        if (
+          userType === Usernames.IILAM_KANOUNY ||
+          userType === "IILAM_KANOUNY"
+        ) {
+          window.location.href = "iilam-kanouny.html";
+        } else if (
+          userType === Usernames.MOAAWEN_CHOOBA ||
+          userType === "Mo3awenCho3ba"
+        ) {
+          window.location.href = "moaawen-chooba.html";
+        } else {
+          window.location.href = "dashboard.html";
+        }
       }, 1000);
     } catch (err) {
       UI.showToast(err.message, "error");

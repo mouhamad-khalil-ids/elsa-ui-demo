@@ -71,4 +71,78 @@ function get(endpoint) {
   return request(endpoint, { method: "GET" });
 }
 
-const API = { request, post, get };
+/**
+ * Get all pending workflow inbox items for the current user's role.
+ * @returns {Promise<Array<{ workflowInstanceId, bookmarkId, applicationId, stepName, requiredRole }>>}
+ */
+async function getWorkflowInbox() {
+  const role = localStorage.getItem("userRole");
+  return get(
+    `/workflow-inbox?role=${encodeURIComponent(role != null ? role : "")}`
+  );
+}
+
+/**
+ * Get a single workflow inbox item by bookmarkId.
+ * @param {string} bookmarkId
+ * @returns {Promise<{ workflowInstanceId, bookmarkId, applicationId, stepName, requiredRole }>}
+ */
+async function getWorkflowInboxItem(bookmarkId) {
+  return get(`/workflow-inbox/${encodeURIComponent(bookmarkId)}`);
+}
+
+/**
+ * Submit approve/reject for a workflow bookmark.
+ * @param {string} bookmarkId
+ * @param {"approved"|"rejected"} decision
+ * @param {string} reason
+ */
+async function submitWorkflowDecision(bookmarkId, decision, reason) {
+  const role = localStorage.getItem("userRole");
+  const url = `${ENV.BASE_URL}/workflow-inbox/${encodeURIComponent(
+    bookmarkId
+  )}/submit?role=${encodeURIComponent(role != null ? role : "")}`;
+
+  const headers = { "Content-Type": "application/json" };
+  const token = localStorage.getItem(ENV.TOKEN_KEY);
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  let response;
+  try {
+    response = await fetch(url, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ decision, reason }),
+    });
+  } catch (networkError) {
+    throw new Error("Network error — please check your connection.");
+  }
+
+  if (response.status === 403) {
+    throw new Error("You do not have permission to action this task.");
+  }
+
+  if (!response.ok) {
+    let message = "Failed to submit decision";
+    try {
+      const data = await response.json();
+      if (data && (data.message || data.error)) {
+        message = data.message || data.error;
+      }
+    } catch {
+      /* ignore */
+    }
+    throw new Error(message);
+  }
+}
+
+const API = {
+  request,
+  post,
+  get,
+  getWorkflowInbox,
+  getWorkflowInboxItem,
+  submitWorkflowDecision,
+};
