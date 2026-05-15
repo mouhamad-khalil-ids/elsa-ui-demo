@@ -7,6 +7,160 @@
 
 const MOAAWEN_INBOX_EXPECTED_ROLE = "Mo3awenCho3ba";
 
+let _wfInboxRootContainer = null;
+let _wfInboxDetailPanelRef = null;
+
+function loadInbox() {
+  if (_wfInboxRootContainer && _wfInboxDetailPanelRef) {
+    return _loadAndRenderInboxList(
+      _wfInboxRootContainer,
+      _wfInboxDetailPanelRef
+    );
+  }
+  return Promise.resolve();
+}
+
+function showError(container, message) {
+  let el = container.querySelector(".action-error");
+  if (!message) {
+    if (el) {
+      el.textContent = "";
+      el.style.display = "none";
+    }
+    return;
+  }
+  if (!el) {
+    el = document.createElement("p");
+    el.className = "action-error field-error";
+    el.setAttribute("role", "alert");
+    container.appendChild(el);
+  }
+  el.style.display = "block";
+  el.textContent = message;
+}
+
+function showSuccess(container, message) {
+  let el = container.querySelector(".action-success");
+  if (!message) {
+    if (el) {
+      el.textContent = "";
+      el.style.display = "none";
+    }
+    return;
+  }
+  if (!el) {
+    el = document.createElement("p");
+    el.className = "action-success";
+    el.style.color = "var(--color-success)";
+    el.setAttribute("role", "status");
+    container.appendChild(el);
+  }
+  el.style.display = "block";
+  el.textContent = message;
+}
+
+async function doSubmit(bookmarkId, actionKey, reason, container) {
+  try {
+    showError(container, "");
+    showSuccess(container, "");
+    await API.submitWorkflowDecision(bookmarkId, actionKey, reason, {});
+    showSuccess(container, "Action submitted successfully.");
+    setTimeout(() => {
+      loadInbox().then(() => {
+        if (_wfInboxDetailPanelRef) {
+          _showDetailEmpty(_wfInboxDetailPanelRef);
+        }
+        _highlightListSelection(null);
+      });
+    }, 1500);
+  } catch (err) {
+    showError(container, err.message);
+  }
+}
+
+async function handleAction(item, action, container) {
+  if (action.requiresReason) {
+    let reasonWrapper = container.querySelector(".reason-wrapper");
+    if (!reasonWrapper) {
+      reasonWrapper = document.createElement("div");
+      reasonWrapper.className = "reason-wrapper";
+      reasonWrapper.style.marginTop = "12px";
+
+      const input = document.createElement("textarea");
+      input.placeholder = "Enter reason...";
+      input.rows = 3;
+      input.style.width = "100%";
+      input.className = "reason-input";
+
+      const confirmBtn = document.createElement("button");
+      confirmBtn.textContent = "Confirm " + action.label;
+      confirmBtn.className = "btn btn-primary";
+      confirmBtn.style.marginTop = "8px";
+      confirmBtn.style.width = "auto";
+
+      confirmBtn.addEventListener("click", async () => {
+        const reason = input.value.trim();
+        if (!reason) {
+          showError(container, "Please enter a reason before confirming.");
+          return;
+        }
+        showError(container, "");
+        confirmBtn.disabled = true;
+        try {
+          await doSubmit(item.bookmarkId, action.key, reason, container);
+        } finally {
+          confirmBtn.disabled = false;
+        }
+      });
+
+      reasonWrapper.appendChild(input);
+      reasonWrapper.appendChild(confirmBtn);
+      container.appendChild(reasonWrapper);
+    }
+    return;
+  }
+
+  container.querySelector(".reason-wrapper")?.remove();
+  await doSubmit(item.bookmarkId, action.key, action.key, container);
+}
+
+function renderActionButtons(item, container) {
+  container.innerHTML = "";
+
+  const list =
+    item.availableActions ??
+    item.AvailableActions ??
+    [];
+  if (!list.length) {
+    container.innerHTML = "<p>No actions available.</p>";
+    return;
+  }
+
+  const styleClassMap = {
+    primary: "btn-primary",
+    danger: "btn-danger",
+    warning: "btn-warning",
+    default: "btn-secondary",
+  };
+
+  list.forEach((action) => {
+    const cssClass = styleClassMap[action.style] ?? "btn-secondary";
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.textContent = action.label;
+    btn.className = `btn ${cssClass}`;
+    btn.style.marginRight = "8px";
+    btn.style.width = "auto";
+
+    btn.addEventListener("click", () => {
+      handleAction(item, action, container);
+    });
+
+    container.appendChild(btn);
+  });
+}
+
 function _escapeHtml(value) {
   const el = document.createElement("div");
   el.textContent = value == null ? "" : String(value);
@@ -148,28 +302,14 @@ function _openInboxDetail(container, detailPanel, bookmarkId) {
   detailPanel.innerHTML = `
     <div class="tx-detail-content">
       <p class="field-error" id="wf-inbox-detail-error" style="display:none" role="alert"></p>
-      <p id="wf-inbox-detail-success" style="display:none;color:var(--color-success);font-size:0.875rem;margin-bottom:0.75rem" role="status"></p>
       <p>Loading…</p>
     </div>`;
-
-  const setDetailError = (message) => {
-    const errEl = detailPanel.querySelector("#wf-inbox-detail-error");
-    if (!errEl) return;
-    if (message) {
-      errEl.textContent = message;
-      errEl.style.display = "block";
-    } else {
-      errEl.textContent = "";
-      errEl.style.display = "none";
-    }
-  };
 
   API.getWorkflowInboxItem(bookmarkId)
     .then((item) => {
       detailPanel.innerHTML = `
         <div class="tx-detail-content">
           <p class="field-error" id="wf-inbox-detail-error" style="display:none" role="alert"></p>
-          <p id="wf-inbox-detail-success" style="display:none;color:var(--color-success);font-size:0.875rem;margin-bottom:0.75rem" role="status"></p>
 
           <div class="tx-detail-header">
             <span class="tx-badge tx-badge--moaawen-chooba">Task</span>
@@ -193,67 +333,13 @@ function _openInboxDetail(container, detailPanel, bookmarkId) {
 
           <div class="modal-divider"></div>
 
-          <label class="modal-meta-label" for="wf-reject-reason" style="display:block;margin-bottom:0.35rem">Reason (for reject)</label>
-          <input type="text" id="wf-reject-reason" style="width:100%;max-width:28rem;margin-bottom:1rem;padding:0.65rem 0.85rem;border-radius:var(--radius-sm);border:1px solid var(--color-border);background:var(--color-surface-2);color:var(--color-text)" autocomplete="off" />
-
-          <div class="detail-actions">
-            <button type="button" class="btn btn-action btn-action--success" id="wf-btn-approve">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
-              Approve
-            </button>
-            <button type="button" class="btn btn-action btn-action--danger" id="wf-btn-reject">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              Reject
-            </button>
-          </div>
+          <div class="detail-actions wf-detail-actions-host" id="wf-detail-actions-root"></div>
         </div>`;
 
-      const successEl = detailPanel.querySelector("#wf-inbox-detail-success");
-      const approveBtn = detailPanel.querySelector("#wf-btn-approve");
-      const rejectBtn = detailPanel.querySelector("#wf-btn-reject");
-
-      const afterSubmit = async () => {
-        if (successEl) {
-          successEl.textContent = "Decision submitted successfully.";
-          successEl.style.display = "block";
-        }
-        await new Promise((resolve) => setTimeout(resolve, 1200));
-        await _loadAndRenderInboxList(container, detailPanel);
-        _showDetailEmpty(detailPanel);
-        _highlightListSelection(null);
-      };
-
-      const wireSubmit = (btn, handler) => {
-        if (!btn) return;
-        btn.addEventListener("click", async () => {
-          setDetailError("");
-          approveBtn.disabled = true;
-          rejectBtn.disabled = true;
-          try {
-            await handler();
-            await afterSubmit();
-          } catch (err) {
-            const msg =
-              err && err.message
-                ? err.message
-                : "Failed to submit decision";
-            setDetailError(msg);
-          } finally {
-            approveBtn.disabled = false;
-            rejectBtn.disabled = false;
-          }
-        });
-      };
-
-      wireSubmit(approveBtn, () =>
-        API.submitWorkflowDecision(bookmarkId, "approved", "")
-      );
-
-      wireSubmit(rejectBtn, () => {
-        const reasonInput = detailPanel.querySelector("#wf-reject-reason");
-        const reason = reasonInput ? reasonInput.value.trim() : "";
-        return API.submitWorkflowDecision(bookmarkId, "rejected", reason);
-      });
+      const actionsRoot = detailPanel.querySelector("#wf-detail-actions-root");
+      if (actionsRoot) {
+        renderActionButtons(item, actionsRoot);
+      }
     })
     .catch((err) => {
       const msg =
@@ -277,6 +363,9 @@ function initMoaawenChoobaPage() {
 
   _renderInboxShell(container);
   const detailPanel = container.querySelector("#wf-inbox-detail-panel");
+  _wfInboxRootContainer = container;
+  _wfInboxDetailPanelRef = detailPanel;
+
   _showDetailEmpty(detailPanel);
   _loadAndRenderInboxList(container, detailPanel);
 

@@ -83,21 +83,22 @@ async function getWorkflowInbox() {
 }
 
 /**
- * Get a single workflow inbox item by bookmarkId.
+ * Get a single workflow inbox item by bookmarkId (full JSON returned as-is).
  * @param {string} bookmarkId
- * @returns {Promise<{ workflowInstanceId, bookmarkId, applicationId, stepName, requiredRole }>}
+ * @returns {Promise<object>} Includes workflowInstanceId, bookmarkId, applicationId, stepName, requiredRole, availableActions[], …
  */
 async function getWorkflowInboxItem(bookmarkId) {
   return get(`/workflow-inbox/${encodeURIComponent(bookmarkId)}`);
 }
 
 /**
- * Submit approve/reject for a workflow bookmark.
+ * Submit a workflow bookmark action.
  * @param {string} bookmarkId
- * @param {"approved"|"rejected"} decision
- * @param {string} reason
+ * @param {string} action - Machine key from availableActions[].key
+ * @param {string|null|undefined} reason
+ * @param {object} [extra={}]
  */
-async function submitWorkflowDecision(bookmarkId, decision, reason) {
+async function submitWorkflowDecision(bookmarkId, action, reason, extra = {}) {
   const role = localStorage.getItem("userRole");
   const url = `${ENV.BASE_URL}/workflow-inbox/${encodeURIComponent(
     bookmarkId
@@ -114,7 +115,11 @@ async function submitWorkflowDecision(bookmarkId, decision, reason) {
     response = await fetch(url, {
       method: "POST",
       headers,
-      body: JSON.stringify({ decision, reason }),
+      body: JSON.stringify({
+        action,
+        reason: reason ?? null,
+        extra,
+      }),
     });
   } catch (networkError) {
     throw new Error("Network error — please check your connection.");
@@ -125,16 +130,7 @@ async function submitWorkflowDecision(bookmarkId, decision, reason) {
   }
 
   if (!response.ok) {
-    let message = "Failed to submit decision";
-    try {
-      const data = await response.json();
-      if (data && (data.message || data.error)) {
-        message = data.message || data.error;
-      }
-    } catch {
-      /* ignore */
-    }
-    throw new Error(message);
+    throw new Error("Failed to submit decision");
   }
 }
 
